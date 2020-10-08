@@ -7,6 +7,7 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Microsoft.WindowsAzure.Storage.Table;
 
 namespace ThumbNailMaker
 {
@@ -15,6 +16,8 @@ namespace ThumbNailMaker
         [FunctionName("RegisterUser")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
+            [Table("tblUserProfile", Connection = "AzureWebJobsStorage")] CloudTable objUserProfileTable,
+            [Queue("userprofileimagesqueue", Connection = "AzureWebJobsStorage")] IAsyncCollector<string> objUserProfileQueueItem,
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
@@ -26,12 +29,12 @@ namespace ThumbNailMaker
             firstName ??= data?.firstname;
             lastName ??= data?.lastname;
 
-            //string profilePicUrl = data.ProfilePicUrl;
-            //await objUserProfileQueueItem.AddAsync(profilePicUrl);
+            string profilePicUrl = data.ProfilePicUrl;
+            await objUserProfileQueueItem.AddAsync(profilePicUrl);
 
-            //UserProfile objUserProfile = new UserProfile(firstName, lastName);
-            //TableOperation objTblOperationInsert = TableOperation.Insert(objUserProfile);
-            //await objUserProfileTable.ExecuteAsync(objTblOperationInsert);
+            UserProfile objUserProfile = new UserProfile(firstName, lastName);
+            TableOperation objTblOperationInsert = TableOperation.Insert(objUserProfile);
+            await objUserProfileTable.ExecuteAsync(objTblOperationInsert);
 
             return (lastName + firstName) != null
                 ? (ActionResult)new OkObjectResult($"Hello, {firstName + " " + lastName}")
