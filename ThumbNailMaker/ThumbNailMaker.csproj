@@ -6,6 +6,7 @@
   <ItemGroup>
     <PackageReference Include="microsoft.azure.webjobs.Extensions.Storage" Version="3.0.6" />
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.7" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.1" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
