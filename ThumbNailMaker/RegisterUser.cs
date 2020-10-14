@@ -23,21 +23,24 @@ namespace ThumbNailMaker
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
 
-            string firstName = null, lastName = null;
+            string firstName = null;
+            string lastName = null;
+            string email = null;
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject(requestBody);
             firstName ??= data?.firstname;
             lastName ??= data?.lastname;
+            email ??= data?.email;
 
             string profilePicUrl = data.ProfilePicUrl;
             await objUserProfileQueueItem.AddAsync(profilePicUrl);
 
-            UserProfile objUserProfile = new UserProfile(firstName, lastName);
+            UserProfile objUserProfile = new UserProfile(firstName, lastName, profilePicUrl,email);
             TableOperation objTblOperationInsert = TableOperation.Insert(objUserProfile);
             await objUserProfileTable.ExecuteAsync(objTblOperationInsert);
 
-            await NotificationQueueItem.AddAsync("");
+            await NotificationQueueItem.AddAsync(JsonConvert.SerializeObject(objUserProfile));
 
             return (lastName + firstName) != null
                 ? (ActionResult)new OkObjectResult($"Hello, {firstName + " " + lastName}")
