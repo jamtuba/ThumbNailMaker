@@ -18,6 +18,7 @@ namespace ThumbNailMaker
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
             [Table("tblUserProfile", Connection = "AzureWebJobsStorage")] CloudTable objUserProfileTable,
             [Queue("userprofileimagesqueue", Connection = "AzureWebJobsStorage")] IAsyncCollector<string> objUserProfileQueueItem,
+            [Queue("notificationqueue", Connection = "AzureWebJobsStorage")] IAsyncCollector<string> NotificationQueueItem,
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
@@ -35,6 +36,8 @@ namespace ThumbNailMaker
             UserProfile objUserProfile = new UserProfile(firstName, lastName);
             TableOperation objTblOperationInsert = TableOperation.Insert(objUserProfile);
             await objUserProfileTable.ExecuteAsync(objTblOperationInsert);
+
+            await NotificationQueueItem.AddAsync("");
 
             return (lastName + firstName) != null
                 ? (ActionResult)new OkObjectResult($"Hello, {firstName + " " + lastName}")
