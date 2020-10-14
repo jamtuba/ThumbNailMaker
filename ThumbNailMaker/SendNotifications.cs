@@ -12,7 +12,7 @@ namespace ThumbNailMaker
         public static void Run(
             [QueueTrigger("notificationqueue", Connection = "AzureWebJobsStorage")]string myQueueItem,
             [SendGrid(ApiKey = "SendgridAPIKey")] out SendGridMessage message,
-            [Blob("userregistrationmaillogs/{rand-guid}.log", Connection = "AzureWebJobsStorage")]TextWriter outputBlob,
+            IBinder binder,
             ILogger log)
         {
             log.LogInformation($"C# Queue trigger function processed: {myQueueItem}");
@@ -39,7 +39,10 @@ namespace ThumbNailMaker
                 "Best Regards," + "<br>" + "Website Team";
 
             message.AddContent("text/html", emailContent);
-            outputBlob.WriteLine(emailContent);
+            using (var emailLogBloboutput = binder.Bind<TextWriter>(new BlobAttribute($"userregistrationmaillogs/{ inputJson.RowKey }.log")))
+            {
+                emailLogBloboutput.WriteLine(emailContent);
+            }
         }
     }
 }
