@@ -1,5 +1,4 @@
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Twilio;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using SendGrid.Helpers.Mail;
@@ -8,6 +7,7 @@ using System.IO;
 using System.Text;
 using Twilio.Rest.Api.V2010.Account;
 using Twilio.Types;
+using Microsoft.Extensions.Configuration;
 
 namespace ThumbNailMaker
 {
@@ -19,9 +19,16 @@ namespace ThumbNailMaker
             [SendGrid(ApiKey = "SendgridAPIKey")] out SendGridMessage message,
             IBinder binder,
             [TwilioSms(AccountSidSetting = "AccountSidSetting", AuthTokenSetting = "AuthTokenSetting")] out CreateMessageOptions objsmsmessage,
+            ExecutionContext context,
             ILogger log)
         {
             log.LogInformation($"C# Queue trigger function processed: {myQueueItem}");
+
+            var config = new ConfigurationBuilder()
+                .SetBasePath(context.FunctionAppDirectory)
+                .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables()
+                .Build();
 
             dynamic inputJson = JsonConvert.DeserializeObject(myQueueItem);
 
@@ -57,12 +64,12 @@ namespace ThumbNailMaker
                 emailLogBloboutput.WriteLine(emailContent);
             }
 
-            
+            var text = config["TelephoneNumber"];
 
             objsmsmessage = new CreateMessageOptions(new PhoneNumber("+4540811993"))
             {
                 Body = "Hello.. Thank you for getting registered.",
-                From = new PhoneNumber("+17203247733")
+                From = new PhoneNumber(text)
             };
         }
     }
